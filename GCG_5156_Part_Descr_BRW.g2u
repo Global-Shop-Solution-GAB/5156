@@ -1,0 +1,114 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create
+Gui.Form..Size(7650,1845)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..BackColor(-2147483633)
+Gui.Form..MousePointer(0)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form..Caption("Part - Description")
+Gui.Form.lbl1.Create(Label,"Part - Description",True,1935,255,0,165,240,True,0,"Arial",8,-2147483633,0)
+Gui.Form.cmdOK.Create(Button)
+Gui.Form.cmdOK.Size(855,375)
+Gui.Form.cmdOK.Position(165,930)
+Gui.Form.cmdOK.Caption("OK")
+Gui.Form.cmdOK.Event(Click,cmdOK_Click)
+Gui.Form.cboPartDescr.Create(ComboBox)
+Gui.Form.cboPartDescr.Size(7065,330)
+Gui.Form.cboPartDescr.Position(165,465)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'BN, Nov 6, 2018
+'This script will create a custom browser for Part, Description.
+'The browser will be in format of a dropdownlist.
+'Estimating / Routing & Quote Management > File > Estimating/Standard Routers > Open/New
+'hook 11069 for Part browser button, with GSS version 2018.2
+'MODIFICATION
+'Bix, 21 Jan 2022
+'Customer wants the Part # to populate when making a selection
+
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	f.Intrinsic.Control.If(v.Caller.Hook,=,11069)
+		f.ODBC.Connection!conx.OpenCompanyConnection		
+		f.Intrinsic.Control.CallSub("Bind_Part_Descr_Dropdownlist")
+		gui.Form..Show
+	f.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.Bind_Part_Descr_Dropdownlist.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare	
+	
+	F.ODBC.Connection!conx.OpenRecordsetRO("rst","Select Part + '  Description:  ' + Description  as PartDescr from Inventory_MSTR where Part not like '0%' order by Part")
+		f.Intrinsic.Control.DoUntil(V.ODBC.conx!rst.EOF)		
+			gui.Form.cboPartDescr.AddItem(V.ODBC.conx!rst.FieldVal!PartDescr)
+			f.ODBC.conx!rst.MoveNext
+		f.Intrinsic.Control.Loop
+	F.ODBC.conx!rst.Close	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+Program.Sub.Bind_Part_Descr_Dropdownlist.End
+
+Program.Sub.cmdOK_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+	v.Local.sPartDescr.Declare
+	
+	'Set the Description back to the Router header screen
+	f.Intrinsic.String.Split(v.Screen.Form!cboPartDescr.Text,"Description:",v.Local.sPartDescr)
+	f.Intrinsic.Control.If(v.Local.sPartDescr.UBound,>,0)
+'		Variable.Passed.000017.Set(v.Local.sPartDescr(1).Trim)
+		'MODIFICATION - Bix 21 Jan 2022 - Customer wants the Part # to populate in the Router Description Text Box instead of the Description
+		Variable.Passed.000017.Set(v.Local.sPartDescr(0).Trim)
+	f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.CallSub("Unload")	
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}GAB Version: {5}}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub("Unload")
+F.Intrinsic.Control.EndTry
+Program.Sub.cmdOK_Click.End
+
+Program.Sub.Form_UnLoad.Start
+f.Intrinsic.Control.CallSub("Unload")
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.UnLoad.Start
+f.Intrinsic.Control.Try
+	v.Local.sError.Declare
+
+	F.Intrinsic.Control.If(V.ODBC.conx.State,=,1)
+		F.ODBC.Connection!conx.close
+	F.Intrinsic.Control.EndIf
+	'Halt the Core Extra Description Browser
+	v.Passed.777777.Set(1)
+	f.Intrinsic.Control.End
+
+F.Intrinsic.Control.Catch
+	Function.Intrinsic.String.Build("Subroutine Error {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End	
+F.Intrinsic.Control.EndTry
+Program.Sub.UnLoad.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$bbaker$}$20220121084146572$}$pM7xsHplA2E9VCTenDTJ47gi1rF/t66WK1RmmyJNQFTd8w4uKca+8wmSnf8a0PVsajP9AItLYjI=
+Program.Sub.Comments.End
